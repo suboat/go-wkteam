@@ -9,6 +9,21 @@ import (
 
 // 微控返回数据
 
+// query参数
+type Query struct {
+	Account string                 // 要管理的微信号
+	Skip    int                    // 分页参数
+	Page    int                    // 分页参数,填写会覆盖Skip信息
+	Limit   int                    // 分页参数,默认10
+	Params  map[string]interface{} // 其它参数
+}
+
+// 群信息
+type Group struct {
+	Gid  string `json:"number"` // 群唯一ID
+	Name string `json:"name"`   // 群名
+}
+
 // 开发者信息
 type Agent struct {
 	Uid        int       `json:"uid"`                  // 开发者uid
@@ -24,6 +39,7 @@ type Agent struct {
 	inited bool //
 }
 
+// 整理为go友好数据格式
 func (d *Agent) init() (err error) {
 	if d.inited {
 		return

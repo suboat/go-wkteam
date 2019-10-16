@@ -1,7 +1,10 @@
 package wkteam
 
 import (
-	"bytes"
+	"github.com/suboat/go-contrib"
+	"net/url"
+	"strings"
+
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -22,14 +25,32 @@ func (api *WkTeam) GetAgent() (ret *Agent, err error) {
 	return
 }
 
+// 取所群信息
+func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
+	if query == nil {
+		err = contrib.ErrParamInvalid
+		return
+	} else if len(query.Account) == 0 {
+		query.Account = Settings.Account
+	}
+	var (
+		data []*Group
+	)
+	if _, err = api.Do("/foreign/group/get", query, &data); err != nil {
+		return
+	}
+	ret = data
+	return
+}
+
 // 发起请求
-func (api *WkTeam) Do(name string, params map[string]interface{}, data interface{}) (ret []byte, err error) {
+func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, err error) {
 	if err = api.initApiKey(); err != nil {
 		return
 	}
 	var (
 		client  = &http.Client{}
-		url     = fmt.Sprintf(`%s%s`, api.ApiHost, name)
+		uri     = fmt.Sprintf(`%s%s`, api.ApiHost, name)
 		now     = time.Now().Unix()
 		webTime = strconv.Itoa(int(now)) + "_s"
 		token   = fmt.Sprintf(`%x`, md5.Sum([]byte(webTime+api.Secret)))
@@ -38,12 +59,52 @@ func (api *WkTeam) Do(name string, params map[string]interface{}, data interface
 			Msg  string          `json:"msg"`  // 反馈信息
 			Data json.RawMessage `json:"data"` //
 		}{}
-		req  *http.Request
-		resp *http.Response
-		raw  []byte
+		//
+		account = ""
+		limit   = 10
+		skip    = 0
+		params  = map[string][]string{}
+		req     *http.Request
+		resp    *http.Response
+		raw     []byte
 	)
 
-	if req, err = http.NewRequest("POST", url, bytes.NewBuffer(nil)); err != nil {
+	// 参数
+	if query != nil {
+		if len(query.Account) > 0 {
+			account = query.Account
+		}
+		if query.Limit > 0 {
+			if limit = query.Limit; limit > 100 {
+				limit = 100 // limit最大值100
+			}
+		}
+		if query.Skip > 0 {
+			skip = query.Skip
+		}
+		if query.Page > 1 {
+			// page1起始
+			skip = (query.Page - 1) * limit
+		}
+		if query.Params != nil {
+			for k, v := range query.Params {
+				params[k] = []string{fmt.Sprintf("%v", v)}
+			}
+		}
+		if len(account) > 0 {
+			params["account"] = []string{account}
+		}
+		if limit > 0 {
+			if skip > 0 {
+				if _page := skip/limit + 1; _page > 0 {
+					params["num"] = []string{fmt.Sprintf("%d", limit)}
+					params["page"] = []string{fmt.Sprintf("%d", _page)}
+				}
+			}
+		}
+	}
+
+	if req, err = http.NewRequest("POST", uri, strings.NewReader(url.Values(params).Encode())); err != nil {
 		return
 	}
 	req.Header.Add("hswebtime", webTime)

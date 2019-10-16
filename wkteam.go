@@ -27,15 +27,19 @@ type Config struct {
 	Phone    string // 开发者手机号
 	Password string // 开发者密码
 	Secret   string // 开发者密钥
+	Account  string // 默认要管理的微信号
 }
 
 //
 type WkTeam struct {
-	ApiHost  string         // 微控api入口
-	Phone    string         // 开发者手机号
-	Password string         // 开发者密码
-	Secret   string         // 开发者密钥
-	Log      contrib.Logger //
+	// 账号信息
+	Phone    string // 开发者手机号
+	Password string // 开发者密码
+	Secret   string // 开发者密钥
+	Account  string // 要管理的微信号
+	//
+	ApiHost string         // 微控api入口
+	Log     contrib.Logger //
 	//
 	lock   sync.RWMutex //
 	apiKey string       //
@@ -93,6 +97,7 @@ func init() {
 		"Phone":    "开发者手机号",
 		"Password": "开发者密码",
 		"Secret":   "开发者密钥",
+		"Account":  "默认要管理的微信号",
 	})
 	// version
 	if len(GitCommit) > 0 {
