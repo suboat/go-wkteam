@@ -127,3 +127,26 @@ func (api *WkTeam) initApiKey() (err error) {
 	//
 	return
 }
+
+// 同意添加好友
+func (api *WkTeam) PassAddFriend(account string) (ret bool, err error) {
+	if len(account) == 0 {
+		// 微信号必填
+		return
+	}
+	var (
+		param = map[string]interface{}{
+			"my_account": []string{api.Account},
+			"account":    []string{account},
+		}
+	)
+	if _ret, _err := api.Do("/foreign/friends/passAddFriends", param, nil); _err != nil {
+		err = _err
+		return
+	} else {
+		fmt.Println("resp:", string(_ret))
+		// 成功添加朋友
+		ret = true
+	}
+	return
+}

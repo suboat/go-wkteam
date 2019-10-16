@@ -35,6 +35,7 @@ type WkTeam struct {
 	Phone    string         // 开发者手机号
 	Password string         // 开发者密码
 	Secret   string         // 开发者密钥
+	Account  string         // 开发者微信号
 	Log      contrib.Logger //
 	//
 	lock   sync.RWMutex //

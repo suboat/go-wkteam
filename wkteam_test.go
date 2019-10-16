@@ -40,3 +40,14 @@ func Test_GetAgent(t *testing.T) {
 	as.Nil(err)
 	t.Log(PubJSON(d))
 }
+
+// 同意好友添加申请
+func Test_PassAddFriend(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	d, err := api.PassAddFriend("wesker59418")
+	as.Nil(err)
+	t.Log(d)
+	return
+}
