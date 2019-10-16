@@ -46,7 +46,18 @@ func Test_PassAddFriend(t *testing.T) {
 	testConfigRead()
 	as := require.New(t)
 	api := NewWkTeam(nil)
-	d, err := api.PassAddFriend("wesker59418")
+	d, err := api.PassAddFriend("好友微信号")
+	as.Nil(err)
+	t.Log(d)
+	return
+}
+
+// 备注好友
+func Test_RemarkFriend(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	d, err := api.RemarkFriend("好友微信号", "备注名")
 	as.Nil(err)
 	t.Log(d)
 	return
