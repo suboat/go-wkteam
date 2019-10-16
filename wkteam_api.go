@@ -15,37 +15,6 @@ import (
 	"time"
 )
 
-// GetAgent 取开发者信息
-func (api *WkTeam) GetAgent() (ret *Agent, err error) {
-	var data = new(Agent)
-	if _, err = api.Do("/foreign/user/getInfo", nil, data); err != nil {
-		return
-	}
-	_ = data.init()
-	ret = data
-	return
-}
-
-// GetGroups 取群列表
-func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
-	if query == nil {
-		query = &Query{}
-	}
-	if len(query.Account) == 0 {
-		if query.Account = api.Account; len(query.Account) == 0 {
-			query.Account = Settings.Account
-		}
-	}
-	var (
-		data []*Group
-	)
-	if _, err = api.Do("/foreign/group/get", query, &data); err != nil {
-		return
-	}
-	ret = data
-	return
-}
-
 // Do 发起请求
 func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, err error) {
 	if err = api.initApiKey(); err != nil {
@@ -191,6 +160,37 @@ func (api *WkTeam) initApiKey() (err error) {
 	api.Log.Debugf(`[api-init] get apiKey:%s`, api.apiKey)
 
 	//
+	return
+}
+
+// GetAgent 取开发者信息
+func (api *WkTeam) GetAgent() (ret *Agent, err error) {
+	var data = new(Agent)
+	if _, err = api.Do("/foreign/user/getInfo", nil, data); err != nil {
+		return
+	}
+	_ = data.init()
+	ret = data
+	return
+}
+
+// GetGroups 取群列表
+func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
+	if query == nil {
+		query = &Query{}
+	}
+	if len(query.Account) == 0 {
+		if query.Account = api.Account; len(query.Account) == 0 {
+			query.Account = Settings.Account
+		}
+	}
+	var (
+		data []*Group
+	)
+	if _, err = api.Do("/foreign/group/get", query, &data); err != nil {
+		return
+	}
+	ret = data
 	return
 }
 
