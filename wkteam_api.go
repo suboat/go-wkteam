@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/suboat/go-contrib"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -45,7 +46,7 @@ func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
 	return
 }
 
-// 发起请求
+// Do 发起请求
 func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, err error) {
 	if err = api.initApiKey(); err != nil {
 		return
@@ -191,24 +192,48 @@ func (api *WkTeam) initApiKey() (err error) {
 	return
 }
 
-// 同意添加好友
+// PassAddFriend 同意添加好友
 func (api *WkTeam) PassAddFriend(account string) (ret bool, err error) {
 	if len(account) == 0 {
 		// 微信号必填
+		err = contrib.ErrParamUndefined
 		return
 	}
 	var (
 		param = map[string]interface{}{
 			"my_account": Settings.Account,
-			"account":    account,
+			"account":    account, // 好友微信号
 		}
 	)
-	if _ret, _err := api.Do("/foreign/friends/passAddFriends", &Query{Params: param}, nil); _err != nil {
+	if _, _err := api.Do("/foreign/friends/passAddFriends", &Query{Params: param}, nil); _err != nil {
 		err = _err
 		return
 	} else {
-		fmt.Println("resp:", string(_ret))
 		// 成功添加朋友
+		ret = true
+	}
+	return
+}
+
+// RemarkFriend 备注好友
+func (api *WkTeam) RemarkFriend(account, remarkName string) (ret bool, err error) {
+	if len(account) == 0 {
+		// 微信号必填
+		err = contrib.ErrParamUndefined
+		return
+	}
+	var (
+		param = map[string]interface{}{
+			"my_account": Settings.Account,
+			"to_account": account,    // 好友微信号
+			"remark":     remarkName, // 备注名
+		}
+	)
+	if _, _err := api.Do("/foreign/friends/remark", &Query{Params: param}, nil); _err != nil {
+		err = _err
+		return
+	} else {
+		// 成功备注好友
 		ret = true
 	}
 	return
