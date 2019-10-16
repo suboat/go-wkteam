@@ -35,7 +35,7 @@ func testConfigRead() {
 func Test_GetAgent(t *testing.T) {
 	testConfigRead()
 	as := require.New(t)
-	api := NewWkTeam(nil)
+	api := &WkTeam{}
 	d, err := api.GetAgent()
 	as.Nil(err)
 	t.Log(PubJSON(d))

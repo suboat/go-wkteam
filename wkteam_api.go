@@ -147,7 +147,9 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 
 // 获取apiKey
 func (api *WkTeam) initApiKey() (err error) {
-	if len(api.apiKey) > 0 {
+	if err = api.init(); err != nil {
+		return
+	} else if len(api.apiKey) > 0 {
 		return
 	}
 	api.lock.Lock()

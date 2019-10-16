@@ -59,6 +59,36 @@ func (cfg *Config) Valid() (err error) {
 	return
 }
 
+//
+func (api *WkTeam) init() (err error) {
+	if api.inited {
+		return
+	}
+	api.lock.Lock()
+	defer api.lock.Unlock()
+	if api.inited {
+		return
+	}
+	// defaults
+	if api.Log == nil {
+		api.Log = log.Log
+	}
+	if len(api.ApiHost) == 0 {
+		api.ApiHost = Settings.ApiHost
+	}
+	if len(api.Phone) == 0 {
+		api.Phone = Settings.Phone
+	}
+	if len(api.Password) == 0 {
+		api.Password = Settings.Password
+	}
+	if len(api.Secret) == 0 {
+		api.Secret = Settings.Secret
+	}
+	api.inited = true
+	return
+}
+
 // NewWkTeam 新建一个微控对象
 func NewWkTeam(s *WkTeam) (ret *WkTeam) {
 	if s != nil {
@@ -66,22 +96,7 @@ func NewWkTeam(s *WkTeam) (ret *WkTeam) {
 	} else {
 		ret = new(WkTeam)
 	}
-	// defaults
-	if ret.Log == nil {
-		ret.Log = log.Log
-	}
-	if len(ret.ApiHost) == 0 {
-		ret.ApiHost = Settings.ApiHost
-	}
-	if len(ret.Phone) == 0 {
-		ret.Phone = Settings.Phone
-	}
-	if len(ret.Password) == 0 {
-		ret.Password = Settings.Password
-	}
-	if len(ret.Secret) == 0 {
-		ret.Secret = Settings.Secret
-	}
+	_ = ret.init()
 	return
 }
 
