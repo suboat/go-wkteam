@@ -1,16 +1,16 @@
 package wkteam
 
 import (
-	"github.com/suboat/go-contrib"
-	"net/url"
-	"strings"
+	//"github.com/suboat/go-contrib"
 
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -25,13 +25,15 @@ func (api *WkTeam) GetAgent() (ret *Agent, err error) {
 	return
 }
 
-// 取所群信息
+// GetGroups 取群列表
 func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
 	if query == nil {
-		err = contrib.ErrParamInvalid
-		return
-	} else if len(query.Account) == 0 {
-		query.Account = Settings.Account
+		query = &Query{}
+	}
+	if len(query.Account) == 0 {
+		if query.Account = api.Account; len(query.Account) == 0 {
+			query.Account = Settings.Account
+		}
 	}
 	var (
 		data []*Group
@@ -122,7 +124,7 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 	if msg.Code != 1 {
 		// 失败
 		if len(msg.Msg) > 0 {
-			err = fmt.Errorf(`%s`, msg.Msg)
+			err = fmt.Errorf(`%s <- %s`, msg.Msg, PubJSON(params))
 		} else {
 			err = fmt.Errorf("unknown err: %s", string(raw))
 		}

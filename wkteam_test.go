@@ -41,6 +41,16 @@ func Test_GetAgent(t *testing.T) {
 	t.Log(PubJSON(d))
 }
 
+// 获取群列表
+func Test_GetGroups(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	d, err := api.GetGroups(nil)
+	as.Nil(err)
+	t.Log(PubJSON(d))
+}
+
 // 同意好友添加申请
 func Test_PassAddFriend(t *testing.T) {
 	testConfigRead()
