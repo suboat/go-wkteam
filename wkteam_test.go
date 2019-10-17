@@ -62,3 +62,25 @@ func Test_RemarkFriend(t *testing.T) {
 	t.Log(d)
 	return
 }
+
+// 获取一个群的详细消息
+func Test_GetGroupInfo(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	d, err := api.GetGroupInfo("群的number")
+	as.Nil(err)
+	t.Log(d)
+	return
+}
+
+// 获取一个群的详细消息
+func Test_GetUserInfo(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	d, err := api.GetUserInfo("微信号")
+	as.Nil(err)
+	t.Log(d)
+	return
+}

@@ -134,6 +134,7 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 
 	// 解析数据
 	if data != nil {
+		fmt.Println("aaaaa", string(msg.Data))
 		if err = json.Unmarshal(msg.Data, data); err != nil {
 			return
 		}
@@ -233,5 +234,41 @@ func (api *WkTeam) RemarkFriend(account, remarkName string) (ret bool, err error
 		// 成功备注好友
 		ret = true
 	}
+	return
+}
+
+// GetGroupInfo 获取一个群信息
+func (api *WkTeam) GetGroupInfo(gid string) (ret *Group, err error) {
+	var (
+		param = map[string]interface{}{
+			"my_account": Settings.Account,
+			"g_number":   gid,
+		}
+		data = new(Group)
+	)
+
+	if _, _err := api.Do("/foreign/group/groupInfo", &Query{Params: param}, data); _err != nil {
+		err = _err
+		return
+	}
+	ret = data
+
+	return
+}
+
+// GetGroupInfo 获取一个用户的信息
+func (api *WkTeam) GetUserInfo(account string) (ret *User, err error) {
+	var (
+		param = map[string]interface{}{
+			"my_account": account, // 微信号
+		}
+		data = new(User)
+	)
+
+	if _, _err := api.Do("/foreign/message/wxInfo", &Query{Params: param}, data); _err != nil {
+		err = _err
+		return
+	}
+	ret = data
 	return
 }

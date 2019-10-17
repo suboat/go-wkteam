@@ -24,6 +24,16 @@ type Group struct {
 	Name string `json:"name"`   // 群名
 }
 
+// 用户信息
+type User struct {
+	Account      string `json:"account"`       // 微信号
+	AccountAlias string `json:"account_alias"` // 微信唯一id(原始的微信号)
+	Name         string `json:"name"`          // 微信昵称
+	Sex          int    `json:"sex"`           // 性别
+	Area         string `json:"area"`          // 所在地
+	Description  string `json:"description"`   // 签名
+}
+
 // 开发者信息
 type Agent struct {
 	Uid        int       `json:"uid"`                  // 开发者uid
