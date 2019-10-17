@@ -39,6 +39,24 @@ type MsgGroup struct {
 	inited     bool  //
 }
 
+type MsgUser struct {
+	// 开发者信息
+	Uid string `json:"my_account"` //
+	// 好友信息
+	ToUid   string `json:"to_account"` // 好友唯一ID
+	ToName  string `json:"to_name"`    // 昵称
+	ToAlias string `json:"form_name"`  // 备注名
+	// 消息相关
+	Type        int       `json:"type"`           // 类型：1自己发的、2好友发的
+	ContentType int       `json:"content_type"`   // 消息类型 消息类型：1文字、2图片、3表情、4语音、5视频、6文件、10系统消息
+	Content     string    `json:"content"`        // 消息内容
+	Time        time.Time `json:"time,omitempty"` // 消息创建时间
+	// 要消化的字段
+	ID         int   `json:"id,omitempty"`          // 消息ID
+	CreateTime int64 `json:"create_time,omitempty"` // 消息创建时间 (时间戳)
+	inited     bool  //
+}
+
 // 用户信息
 type User struct {
 	Account      string `json:"account"`       // 微信号
@@ -73,16 +91,39 @@ func (d *MsgGroup) init() (err error) {
 	return
 }
 
+// 整理为go友好数据格式
+func (d *MsgUser) init() (err error) {
+	if d.inited {
+		return
+	}
+	d.Time = time.Unix(d.CreateTime, 0)
+	d.inited = true
+	return
+}
+
 //
 func (d *MsgGroup) GetName() string {
 	if d == nil {
 		return ""
 	} else if len(d.NameAlias) > 0 {
 		return d.NameAlias
-	} else if len(d.NameAlias) > 0 {
+	} else if len(d.Name) > 0 {
 		return d.Name
 	} else {
 		return d.Uid
+	}
+}
+
+//
+func (d *MsgUser) GetName() string {
+	if d == nil {
+		return ""
+	} else if len(d.ToAlias) > 0 {
+		return d.ToAlias
+	} else if len(d.ToName) > 0 {
+		return d.ToName
+	} else {
+		return d.ToUid
 	}
 }
 

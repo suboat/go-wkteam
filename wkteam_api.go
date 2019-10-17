@@ -56,7 +56,6 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 			skip = query.Skip
 		}
 		if query.Page > 0 && limit > 0 {
-			// page1起始
 			skip = (query.Page) * limit
 		}
 		if query.Params != nil {
@@ -114,7 +113,6 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 
 	// 解析数据
 	if data != nil {
-		fmt.Println("aaaaa", string(msg.Data))
 		if err = json.Unmarshal(msg.Data, data); err != nil {
 			return
 		}
@@ -246,6 +244,52 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 		}
 	}
 	ret = data
+	return
+}
+
+// GetMsgUser 获取单聊信息 toUid: 好友微信唯一ID
+func (api *WkTeam) GetMsgUser(toUid string, query *Query) (ret []*MsgUser, err error) {
+	if len(toUid) == 0 {
+		err = contrib.ErrParamUndefined.SetVars("toUid")
+		return
+	}
+	if query == nil {
+		query = &Query{}
+	}
+	if len(query.Account) == 0 {
+		if query.Account = api.Account; len(query.Account) == 0 {
+			query.Account = Settings.Account
+		}
+	}
+	if query.Limit < 30 {
+		query.Limit = 30 // 消息最少拉取30条
+	}
+	if query.Params == nil {
+		query.Params = make(map[string]interface{})
+	}
+	// 整理参数
+	query.Params["account"] = toUid
+	if len(query.Account) > 0 {
+		query.Params["my_account"] = query.Account
+	}
+
+	var (
+		data []*MsgUser
+	)
+	if _, err = api.Do("/foreign/group/getSingle", query, &data); err != nil {
+		return
+	} else {
+		// 倒序结果
+		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+			data[i], data[j] = data[j], data[i]
+		}
+		for _, d := range data {
+			_ = d.init()
+			d.ToUid = toUid
+		}
+	}
+	ret = data
+
 	return
 }
 

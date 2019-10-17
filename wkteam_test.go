@@ -73,6 +73,36 @@ func Test_GetMsgGroup(t *testing.T) {
 	api.Log.Infof("获取到群消息 %d/%d", len(d), query.Total)
 }
 
+// 取好友单聊消息
+func Test_GetMsgUser(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	query := &Query{Limit: 30, Page: 0}
+	d, err := api.GetMsgUser(testFriendUID, query)
+	as.Nil(err)
+	// 调试信息
+	for _i, _d := range d {
+		if _d.ContentType == 1 {
+			if _d.Type == 1 {
+				// 开发者发送的
+				api.Log.Infof("#%d %s -> %s->%s: %s", _i+1, _d.Time, _d.Uid, _d.GetName(), _d.Content)
+			} else {
+				// 好友发送的
+				api.Log.Infof("#%d %s -> %s->%s: %s", _i+1, _d.Time, _d.GetName(), _d.Uid, _d.Content)
+			}
+		} else {
+			// 系统发送的
+			api.Log.Infof("#%d %s -> system->%s: %s", _i+1, _d.Time, _d.Uid, _d.Content)
+		}
+
+		if _i == len(d)-1 {
+			api.Log.Info(PubJSON(_d))
+		}
+	}
+	api.Log.Infof("获取到的好友消息 %d/%d", len(d), query.Total)
+}
+
 // 同意好友添加申请
 func Test_PassAddFriend(t *testing.T) {
 	testConfigRead()
