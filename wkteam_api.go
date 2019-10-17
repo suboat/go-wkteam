@@ -2,46 +2,17 @@ package wkteam
 
 import (
 	"github.com/suboat/go-contrib"
-	"net/url"
-	"strings"
 
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
-
-// GetAgent 取开发者信息
-func (api *WkTeam) GetAgent() (ret *Agent, err error) {
-	var data = new(Agent)
-	if _, err = api.Do("/foreign/user/getInfo", nil, data); err != nil {
-		return
-	}
-	_ = data.init()
-	ret = data
-	return
-}
-
-// GetGroups 取所群信息
-func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
-	if query == nil {
-		err = contrib.ErrParamInvalid
-		return
-	} else if len(query.Account) == 0 {
-		query.Account = Settings.Account
-	}
-	var (
-		data []*Group
-	)
-	if _, err = api.Do("/foreign/group/get", query, &data); err != nil {
-		return
-	}
-	ret = data
-	return
-}
 
 // Do 发起请求
 func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, err error) {
@@ -55,13 +26,14 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 		webTime = strconv.Itoa(int(now)) + "_s"
 		token   = fmt.Sprintf(`%x`, md5.Sum([]byte(webTime+api.Secret)))
 		msg     = &struct {
-			Code int             `json:"code"` // 1成功，0失败
-			Msg  string          `json:"msg"`  // 反馈信息
-			Data json.RawMessage `json:"data"` //
+			Code  int             `json:"code"`  // 1成功，0失败
+			Msg   string          `json:"msg"`   // 反馈信息
+			Total int             `json:"total"` // 总记录数
+			Data  json.RawMessage `json:"data"`  //
 		}{}
 		//
 		account = ""
-		limit   = 10
+		limit   = 0
 		skip    = 0
 		params  = map[string][]string{}
 		req     *http.Request
@@ -71,6 +43,7 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 
 	// 参数
 	if query != nil {
+		// 更新参数
 		if len(query.Account) > 0 {
 			account = query.Account
 		}
@@ -82,22 +55,24 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 		if query.Skip > 0 {
 			skip = query.Skip
 		}
-		if query.Page > 1 {
+		if query.Page > 0 && limit > 0 {
 			// page1起始
-			skip = (query.Page - 1) * limit
+			skip = (query.Page) * limit
 		}
 		if query.Params != nil {
 			for k, v := range query.Params {
 				params[k] = []string{fmt.Sprintf("%v", v)}
 			}
 		}
-		if len(account) > 0 {
+		// 写入参数
+		if len(account) > 0 && params["account"] == nil {
 			params["account"] = []string{account}
 		}
 		if limit > 0 {
+			params["num"] = []string{fmt.Sprintf("%d", limit)}
 			if skip > 0 {
+				// page是1起始
 				if _page := skip/limit + 1; _page > 0 {
-					params["num"] = []string{fmt.Sprintf("%d", limit)}
 					params["page"] = []string{fmt.Sprintf("%d", _page)}
 				}
 			}
@@ -122,15 +97,20 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 	if msg.Code != 1 {
 		// 失败
 		if len(msg.Msg) > 0 {
-			err = fmt.Errorf(`%s`, msg.Msg)
+			err = fmt.Errorf(`%s <- %s`, msg.Msg, PubJSON(params))
 		} else {
 			err = fmt.Errorf("unknown err: %s", string(raw))
 		}
 		return
 	}
 
+	// 反馈总记录数
+	if msg.Total > 0 && query != nil {
+		query.Total = msg.Total
+	}
+
 	// debug
-	api.Log.Debugf(`[api-resp] %s -> %s`, name, string(raw))
+	api.Log.Debugf(`[api-resp] %s %s -> %s`, name, PubJSON(params), string(raw))
 
 	// 解析数据
 	if data != nil {
@@ -145,7 +125,9 @@ func (api *WkTeam) Do(name string, query *Query, data interface{}) (ret []byte, 
 
 // 获取apiKey
 func (api *WkTeam) initApiKey() (err error) {
-	if len(api.apiKey) > 0 {
+	if err = api.init(); err != nil {
+		return
+	} else if len(api.apiKey) > 0 {
 		return
 	}
 	api.lock.Lock()
@@ -187,6 +169,83 @@ func (api *WkTeam) initApiKey() (err error) {
 	api.Log.Debugf(`[api-init] get apiKey:%s`, api.apiKey)
 
 	//
+	return
+}
+
+// GetAgent 取开发者信息
+func (api *WkTeam) GetAgent() (ret *Agent, err error) {
+	var data = new(Agent)
+	if _, err = api.Do("/foreign/user/getInfo", nil, data); err != nil {
+		return
+	}
+	_ = data.init()
+	ret = data
+	return
+}
+
+// GetGroups 取群列表
+func (api *WkTeam) GetGroups(query *Query) (ret []*Group, err error) {
+	if query == nil {
+		query = &Query{}
+	}
+	if len(query.Account) == 0 {
+		if query.Account = api.Account; len(query.Account) == 0 {
+			query.Account = Settings.Account
+		}
+	}
+	var (
+		data []*Group
+	)
+	if _, err = api.Do("/foreign/group/get", query, &data); err != nil {
+		return
+	}
+	ret = data
+	return
+}
+
+// 取群消息 gid: 群ID 群消息最少拉取30条，默认倒序返回
+func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err error) {
+	if len(gid) == 0 {
+		err = contrib.ErrParamInvalid.SetVars("gid")
+		return
+	}
+	if query == nil {
+		query = &Query{}
+	}
+	if len(query.Account) == 0 {
+		if query.Account = api.Account; len(query.Account) == 0 {
+			query.Account = Settings.Account
+		}
+	}
+	if query.Limit < 30 {
+		query.Limit = 30 // 群消息最少拉取30条
+	}
+	if query.Params == nil {
+		query.Params = make(map[string]interface{})
+	}
+
+	// 整理参数
+	query.Params["account"] = gid
+	if len(query.Account) > 0 {
+		query.Params["my_account"] = query.Account
+	}
+
+	var (
+		data []*MsgGroup
+	)
+	if _, err = api.Do("/foreign/group/getGroup", query, &data); err != nil {
+		return
+	} else {
+		// 倒序结果
+		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+			data[i], data[j] = data[j], data[i]
+		}
+		for _, d := range data {
+			_ = d.init()
+			d.Gid = gid
+		}
+	}
+	ret = data
 	return
 }
 
