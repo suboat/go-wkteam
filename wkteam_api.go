@@ -262,11 +262,12 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 
 	var (
 		data []*struct {
-			Uid       string `json:"wac_account"`
-			Name      string `json:"wac_name"`
-			NameAlias string `json:"form_name"`
-			Content   string `json:"content"`
-			Time      int64  `json:"create_time"`
+			Uid         string `json:"wac_account"`
+			Name        string `json:"wac_name"`
+			NameAlias   string `json:"form_name"`
+			ContentType int    `json:"content_type"`
+			Content     string `json:"content"`
+			Time        int64  `json:"create_time"`
 		}
 	)
 	if _, err = api.Do("/foreign/group/getGroup", query, &data); err != nil {
@@ -286,6 +287,7 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 			Uid:       d.Uid,
 			Name:      d.Name,
 			NameAlias: d.NameAlias,
+			Category:  priContentTypeToStr(d.ContentType),
 			Content:   d.Content,
 			Time:      time.Unix(d.Time, 0),
 		})
@@ -294,8 +296,8 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 }
 
 // GetMsgUser 获取单聊信息 toUid: 好友微信唯一ID
-func (api *WkTeam) GetMsgUser(toUid string, query *Query) (ret []*MsgUser, err error) {
-	if len(toUid) == 0 {
+func (api *WkTeam) GetMsgUser(targetUid string, query *Query) (ret []*MsgUser, err error) {
+	if len(targetUid) == 0 {
 		err = contrib.ErrParamUndefined.SetVars("toUid")
 		return
 	}
@@ -314,13 +316,24 @@ func (api *WkTeam) GetMsgUser(toUid string, query *Query) (ret []*MsgUser, err e
 		query.Params = make(map[string]interface{})
 	}
 	// 整理参数
-	query.Params["account"] = toUid
+	query.Params["account"] = targetUid
 	if len(query.Account) > 0 {
 		query.Params["my_account"] = query.Account
 	}
 
 	var (
-		data []*MsgUser
+		data []*struct {
+			// 开发者信息
+			Account     string `json:"my_account"`            // 收到消息的微信号
+			ToUid       string `json:"to_account"`            // 好友唯一ID
+			ToName      string `json:"to_name"`               // 昵称
+			ToAlias     string `json:"form_name"`             // 备注名
+			Type        int    `json:"type"`                  // 类型：1自己发的、2好友发的
+			ContentType int    `json:"content_type"`          // 消息类型 消息类型：1文字、2图片、3表情、4语音、5视频、6文件、10系统消息
+			Content     string `json:"content"`               // 消息内容
+			ID          int    `json:"id,omitempty"`          // 消息ID
+			CreateTime  int64  `json:"create_time,omitempty"` // 消息创建时间 (时间戳)
+		}
 	)
 	if _, err = api.Do("/foreign/group/getSingle", query, &data); err != nil {
 		return
@@ -329,13 +342,37 @@ func (api *WkTeam) GetMsgUser(toUid string, query *Query) (ret []*MsgUser, err e
 		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
 			data[i], data[j] = data[j], data[i]
 		}
-		for _, d := range data {
-			_ = d.init()
-			d.ToUid = toUid
-		}
 	}
-	ret = data
 
+	// 格式化数据
+	for _, d := range data {
+		r := &MsgUser{
+			Account:  api.Account,
+			Category: priContentTypeToStr(d.ContentType),
+			Content:  d.Content,
+			Time:     time.Unix(d.CreateTime, 0),
+		}
+		if d.Type == 1 {
+			// 自己发的
+			r.IsMe = true
+			r.FromUid = d.Account
+			r.FromName = ""
+			r.FromNameAlias = ""
+			r.ToUid = d.ToUid
+			r.ToName = d.ToName
+			r.ToNameAlias = d.ToAlias
+		} else {
+			// 别人发给我的
+			r.IsMe = false
+			r.FromUid = d.ToUid
+			r.FromName = d.ToName
+			r.FromNameAlias = d.ToAlias
+			r.ToUid = d.Account
+			r.ToName = ""
+			r.ToNameAlias = ""
+		}
+		ret = append(ret, r)
+	}
 	return
 }
 

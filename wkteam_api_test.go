@@ -13,7 +13,7 @@ var (
 	testConfig = "config.test.yaml"
 	//
 	testGroupID     = "18217585821@chatroom" // 测试群号
-	testFriendUID   = "好友微信号"                // 测试好友微信号
+	testFriendUID   = "tudyzhb"              // 测试好友微信号
 	testFriendAlias = "这是一个足够长的测试备注名"        // 测试好友微信号
 )
 
@@ -83,19 +83,7 @@ func Test_GetMsgUser(t *testing.T) {
 	as.Nil(err)
 	// 调试信息
 	for _i, _d := range d {
-		if _d.ContentType == 1 {
-			if _d.Type == 1 {
-				// 开发者发送的
-				api.Log.Infof("#%d %s -> %s->%s: %s", _i+1, _d.Time, _d.Uid, _d.GetName(), _d.Content)
-			} else {
-				// 好友发送的
-				api.Log.Infof("#%d %s -> %s->%s: %s", _i+1, _d.Time, _d.GetName(), _d.Uid, _d.Content)
-			}
-		} else {
-			// 系统发送的
-			api.Log.Infof("#%d %s -> system->%s: %s", _i+1, _d.Time, _d.Uid, _d.Content)
-		}
-
+		api.Log.Infof("#%d %s %s -> %s : %s", _i+1, _d.Time, _d.GetFromName(), _d.GetToName(), _d.Content)
 		if _i == len(d)-1 {
 			api.Log.Info(PubJSON(_d))
 		}

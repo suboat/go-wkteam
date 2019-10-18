@@ -6,6 +6,17 @@ import (
 
 // 微控返回数据
 
+const (
+	// 1文字、2图片、3表情、 4语音、5视频、6文件、10系统消息
+	MsgCategoryTxt = "txt" // 文字
+	MsgCategoryImg = "img" // 图片
+	MsgCategoryGif = "gif" // 表情
+	MsgCategoryWav = "wav" // 语音
+	MsgCategoryMp4 = "mp4" // 视频
+	MsgCategoryDoc = "doc" // 文件
+	MsgCategorySys = "sys" // 系统消息
+)
+
 // query参数
 type Query struct {
 	Account string                 // 要管理的微信号
@@ -25,33 +36,32 @@ type Group struct {
 
 // 群消息
 type MsgGroup struct {
-	Account string    `json:"-"`                 // 收到消息的微信号
-	Gid     string    `json:"gid,omitempty"`     // 群唯一ID
-	Uid     string    `json:"uid,omitempty"`     // 消息发送者唯一ID
-	Name    string    `json:"name,omitempty"`    // 消息发送者昵称
-	Content string    `json:"content,omitempty"` // 消息内容
-	Time    time.Time `json:"time,omitempty"`    // 消息创建时间
-	// optional
+	Account   string `json:"-"`                   // 获取消息的微信号
+	Gid       string `json:"gid,omitempty"`       // 群唯一ID
+	Uid       string `json:"uid,omitempty"`       // 消息发送者唯一ID
+	Name      string `json:"name,omitempty"`      // 消息发送者昵称
 	NameAlias string `json:"nameAlias,omitempty"` // 消息发送者备注
 	GroupName string `json:"groupName,omitempty"` // 群名称
+	// 消息相关
+	Category string    `json:"category,omitempty"` // 消息类型, 见顶部定义
+	Content  string    `json:"content,omitempty"`  // 消息内容
+	Time     time.Time `json:"time,omitempty"`     // 消息创建时间
 }
 
+// 用户消息
 type MsgUser struct {
-	// 开发者信息
-	Uid string `json:"my_account"` //
-	// 好友信息
-	ToUid   string `json:"to_account"` // 好友唯一ID
-	ToName  string `json:"to_name"`    // 昵称
-	ToAlias string `json:"form_name"`  // 备注名
+	Account       string `json:"-"`                       // 获取消息的微信号
+	FromUid       string `json:"fromUid,omitempty"`       // 发送者唯一ID
+	FromName      string `json:"fromName,omitempty"`      // 发送者昵称
+	FromNameAlias string `json:"fromNameAlias,omitempty"` // 发送者备注
+	ToUid         string `json:"toUid,omitempty"`         // 接受者唯一ID
+	ToName        string `json:"toName,omitempty"`        // 接受者昵称
+	ToNameAlias   string `json:"toNameAlias,omitempty"`   // 接受者备注
+	IsMe          bool   `json:"isMe,omitempty"`          // true: 这条消息是我发送的
 	// 消息相关
-	Type        int       `json:"type"`           // 类型：1自己发的、2好友发的
-	ContentType int       `json:"content_type"`   // 消息类型 消息类型：1文字、2图片、3表情、4语音、5视频、6文件、10系统消息
-	Content     string    `json:"content"`        // 消息内容
-	Time        time.Time `json:"time,omitempty"` // 消息创建时间
-	// 要消化的字段
-	ID         int   `json:"id,omitempty"`          // 消息ID
-	CreateTime int64 `json:"create_time,omitempty"` // 消息创建时间 (时间戳)
-	inited     bool  //
+	Category string    `json:"category,omitempty"` // 消息类型, 见顶部定义
+	Content  string    `json:"content,omitempty"`  // 消息内容
+	Time     time.Time `json:"time,omitempty"`     // 消息创建时间
 }
 
 // 用户信息
@@ -74,16 +84,6 @@ type Agent struct {
 	TimeLogin  time.Time `json:"timeLogin,omitempty"`  // 上次登录时间
 }
 
-// 整理为go友好数据格式
-func (d *MsgUser) init() (err error) {
-	if d.inited {
-		return
-	}
-	d.Time = time.Unix(d.CreateTime, 0)
-	d.inited = true
-	return
-}
-
 //
 func (d *MsgGroup) GetName() string {
 	if d == nil {
@@ -97,15 +97,41 @@ func (d *MsgGroup) GetName() string {
 	}
 }
 
-//
+// 消息发出者名字
 func (d *MsgUser) GetName() string {
 	if d == nil {
 		return ""
-	} else if len(d.ToAlias) > 0 {
-		return d.ToAlias
-	} else if len(d.ToName) > 0 {
-		return d.ToName
+	} else if d.IsMe {
+		return d.GetFromName()
 	} else {
-		return d.ToUid
+		return d.GetToName()
 	}
+}
+
+func (d *MsgUser) GetFromName() (ret string) {
+	if d == nil {
+		return
+	}
+	if len(d.FromNameAlias) > 0 {
+		ret = d.FromNameAlias
+	} else if len(d.FromName) > 0 {
+		ret = d.FromName
+	} else {
+		ret = d.FromUid
+	}
+	return
+}
+
+func (d *MsgUser) GetToName() (ret string) {
+	if d == nil {
+		return
+	}
+	if len(d.ToNameAlias) > 0 {
+		ret = d.ToNameAlias
+	} else if len(d.ToName) > 0 {
+		ret = d.ToName
+	} else {
+		ret = d.ToUid
+	}
+	return
 }
