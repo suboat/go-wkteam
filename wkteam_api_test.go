@@ -3,10 +3,10 @@ package wkteam
 import (
 	"github.com/stretchr/testify/require"
 	"github.com/suboat/go-contrib"
-	"time"
 
 	"fmt"
 	"testing"
+	"time"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 	testConfig = "config.test.yaml"
 	//
 	testGroupID     = "18217585821@chatroom" // 测试群号
-	testFriendUID   = "tudyzhb"              // 测试好友微信号
+	testFriendUID   = "golang"               // 测试好友微信号
 	testFriendAlias = "这是一个足够长的测试备注名"        // 测试好友微信号
 )
 
@@ -89,7 +89,7 @@ func Test_GetMsgGroupSince(t *testing.T) {
 			api.Log.Info(PubJSON(_d))
 		}
 	}
-	api.Log.Infof("获取到群消息 %s %d", since, len(d))
+	api.Log.Infof("获取到群消息 %d since: %s", len(d), since)
 }
 
 // 取好友单聊消息
@@ -108,6 +108,24 @@ func Test_GetMsgUser(t *testing.T) {
 		}
 	}
 	api.Log.Infof("获取到的好友消息 %d/%d", len(d), query.Total)
+}
+
+// 取某个时间点后的好友单聊消息
+func Test_GetMsgUserSince(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	since := time.Now().Add(-time.Hour * 4)
+	d, err := api.GetMsgUserSince(testFriendUID, since)
+	as.Nil(err)
+	// 调试信息
+	for _i, _d := range d {
+		api.Log.Infof("#%d %s %s -> %s : %s", _i+1, _d.Time, _d.GetFromName(), _d.GetToName(), _d.Content)
+		if _i == len(d)-1 {
+			api.Log.Info(PubJSON(_d))
+		}
+	}
+	api.Log.Infof("获取到的好友消息 %d since: %s", len(d), since)
 }
 
 // 同意好友添加申请
