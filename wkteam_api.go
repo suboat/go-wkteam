@@ -170,6 +170,23 @@ func (api *WkTeam) initApiKey() (err error) {
 	return
 }
 
+// 登记回调
+func (api *WkTeam) SetCallback(urlPrefix string) (err error) {
+	urlPrefix = strings.TrimRight(urlPrefix, "/")
+	var (
+		params = map[string]interface{}{
+			"callbackSend": urlPrefix + CallbackPrefix + CallbackNormal,   // 通用回调
+			"crowdlog":     urlPrefix + CallbackPrefix + CallbackMsgGroup, // 群聊回调
+		}
+	)
+	if _, err = api.Do("/foreign/user/setUrl", &Query{Params: params}, nil); err != nil {
+		return
+	}
+	// debug
+	api.Log.Infof(`[api-config] callback params: %s`, PubJSON(params))
+	return
+}
+
 // GetAgent 取开发者信息
 func (api *WkTeam) GetAgent() (ret *Agent, err error) {
 	var data = new(Agent)

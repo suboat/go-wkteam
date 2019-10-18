@@ -26,6 +26,8 @@ type Group struct {
 
 // 群消息
 type MsgGroup struct {
+	Account string `json:"account,omitempty"` // 微信号
+	//
 	Gid       string    `json:"gid"`            // 群唯一ID
 	Uid       string    `json:"wac_account"`    // 消息发送者唯一ID
 	Name      string    `json:"wac_name"`       // 消息发送者昵称

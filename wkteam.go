@@ -5,6 +5,7 @@ import (
 	"github.com/suboat/go-contrib/log"
 
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -18,6 +19,9 @@ var (
 	// Settings 系统设置
 	Settings *Config
 )
+
+// 通用hook
+var ()
 
 // Config 系统配置参数
 type Config struct {
@@ -40,6 +44,8 @@ type WkTeam struct {
 	//
 	ApiHost string         // 微控api入口
 	Log     contrib.Logger //
+	// hooks
+	HookMsgGroup func(group *MsgGroup) error
 	//
 	lock   sync.RWMutex //
 	apiKey string       //
@@ -85,6 +91,7 @@ func (api *WkTeam) init() (err error) {
 	if len(api.Secret) == 0 {
 		api.Secret = Settings.Secret
 	}
+	api.ApiHost = strings.TrimRight(api.ApiHost, "/")
 	api.inited = true
 	return
 }
