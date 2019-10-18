@@ -34,7 +34,7 @@ func (api *WkTeam) GetMsgGroupSince(gid string, gte time.Time) (ret []*MsgGroup,
 		}
 
 		// break: 最后一页了
-		if len(data) < query.Limit || query.Total == len(ret) {
+		if len(data) < query.Limit || query.Total == total {
 			break
 		}
 
@@ -78,7 +78,7 @@ func (api *WkTeam) GetMsgUserSince(targetUid string, gte time.Time) (ret []*MsgU
 		}
 
 		// break: 最后一页了
-		if len(data) < query.Limit || query.Total == len(ret) {
+		if len(data) < query.Limit || query.Total == total {
 			break
 		}
 
