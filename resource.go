@@ -1,6 +1,8 @@
 package wkteam
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"time"
 )
 
@@ -84,6 +86,14 @@ type Agent struct {
 	TimeLogin  time.Time `json:"timeLogin,omitempty"`  // 上次登录时间
 }
 
+// 群一条群聊消息的哈希, 去重判断用
+func (d *MsgGroup) GetHash() (ret string) {
+	if d != nil {
+		ret = d.Uid + d.Category + d.Content + d.Time.String()
+	}
+	return fmt.Sprintf(`%x`, sha1.Sum([]byte(ret)))
+}
+
 //
 func (d *MsgGroup) GetName() string {
 	if d == nil {
@@ -95,6 +105,14 @@ func (d *MsgGroup) GetName() string {
 	} else {
 		return d.Uid
 	}
+}
+
+// 群一条单聊消息的哈希, 去重判断用
+func (d *MsgUser) GetHash() (ret string) {
+	if d != nil {
+		ret = d.FromUid + d.ToUid + d.Category + d.Content + d.Time.String()
+	}
+	return fmt.Sprintf(`%x`, sha1.Sum([]byte(ret)))
 }
 
 // 消息发出者名字
