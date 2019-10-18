@@ -189,12 +189,27 @@ func (api *WkTeam) SetCallback(urlPrefix string) (err error) {
 
 // GetAgent 取开发者信息
 func (api *WkTeam) GetAgent() (ret *Agent, err error) {
-	var data = new(Agent)
+	var (
+		data = &struct {
+			ID          int    `json:"uid"`                    // 开发者uid
+			Phone       string `json:"phone"`                  // 开发者手机号
+			Name        string `json:"name"`                   // 开发者名称
+			Sex         string `json:"sex,omitempty"`          // 性别
+			OverdueTime int64  `json:"overdue_time,omitempty"` //
+			LastTime    int64  `json:"last_time,omitempty"`    //
+		}{}
+	)
 	if _, err = api.Do("/foreign/user/getInfo", nil, data); err != nil {
 		return
 	}
-	_ = data.init()
-	ret = data
+	ret = &Agent{
+		ID:         data.ID,
+		Phone:      data.Phone,
+		Name:       data.Name,
+		Sex:        data.Sex,
+		TimeExpire: time.Unix(data.OverdueTime, 0),
+		TimeLogin:  time.Unix(data.LastTime, 0),
+	}
 	return
 }
 
@@ -246,7 +261,13 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 	}
 
 	var (
-		data []*MsgGroup
+		data []*struct {
+			Uid       string `json:"wac_account"`
+			Name      string `json:"wac_name"`
+			NameAlias string `json:"form_name"`
+			Content   string `json:"content"`
+			Time      int64  `json:"create_time"`
+		}
 	)
 	if _, err = api.Do("/foreign/group/getGroup", query, &data); err != nil {
 		return
@@ -255,12 +276,20 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
 			data[i], data[j] = data[j], data[i]
 		}
-		for _, d := range data {
-			_ = d.init()
-			d.Gid = gid
-		}
 	}
-	ret = data
+
+	//
+	for _, d := range data {
+		ret = append(ret, &MsgGroup{
+			Account:   api.Account,
+			Gid:       gid,
+			Uid:       d.Uid,
+			Name:      d.Name,
+			NameAlias: d.NameAlias,
+			Content:   d.Content,
+			Time:      time.Unix(d.Time, 0),
+		})
+	}
 	return
 }
 

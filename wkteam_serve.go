@@ -84,7 +84,7 @@ func (api *WkTeam) handleCallback(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// debug
-	api.Log.Infof(`[serve] %s <- %s`, category, PubJSON(msg))
+	api.Log.Infof(`[serve-callback] %s <- %s`, category, PubJSON(msg))
 
 	//
 	switch category {
@@ -95,12 +95,13 @@ func (api *WkTeam) handleCallback(rw http.ResponseWriter, req *http.Request) {
 		// 群聊回调: 解析为群消息
 		var (
 			resp = &struct {
-				Account string `json:"my_account"`
-				Gid     string `json:"g_number"`
-				Uid     string `json:"to_account"`
-				Name    string `json:"to_name"`
-				Content string `json:"content"`
-				Time    int64  `json:"send_time"`
+				Account   string `json:"my_account"`
+				Gid       string `json:"g_number"`
+				Uid       string `json:"to_account"`
+				Name      string `json:"to_name"`
+				Content   string `json:"content"`
+				Time      int64  `json:"send_time"`
+				GroupName string `json:"g_name"`
 			}{}
 		)
 		if err = json.Unmarshal([]byte(msg["data"]), resp); err != nil {
@@ -114,18 +115,21 @@ func (api *WkTeam) handleCallback(rw http.ResponseWriter, req *http.Request) {
 			NameAlias: "",
 			Content:   resp.Content,
 			Time:      time.Unix(resp.Time, 0),
+			GroupName: resp.GroupName,
 		}
 		// 回调
-		if api.HookMsgGroup != nil {
+		call := api.HookMsgGroup
+		if call == nil {
+			call = DefaultHookHookMsgGroup
+		}
+		if call != nil {
 			go func() {
 				defer PanicRecoverError(api.Log, nil)
-				if _err := api.HookMsgGroup(data); _err != nil {
+				if _err := call(data); _err != nil {
 					api.Log.Errorf(`[serve-hook] HookMsgGroup err: %v <- %s`, _err, PubJSON(data))
 				}
 			}()
 		}
-		// debug
-		api.Log.Info(PubJSON(data))
 		break
 	default:
 		// 未知响应

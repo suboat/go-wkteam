@@ -21,17 +21,24 @@ var (
 )
 
 // 通用hook
-var ()
+var (
+	DefaultHookHookMsgGroup = func(msg *MsgGroup) error {
+		log.Debugf(`[default] HookHookMsgGroup %s <- %s`, msg.Account, PubJSON(msg))
+		return nil
+	}
+)
 
 // Config 系统配置参数
 type Config struct {
 	contrib.Config `yaml:"-"`
 	//
-	ApiHost  string // 微控api入口
-	Phone    string // 开发者手机号
-	Password string // 开发者密码
-	Secret   string // 开发者密钥
-	Account  string // 默认要管理的微信号
+	ApiHost        string // 微控api入口
+	Phone          string // 开发者手机号
+	Password       string // 开发者密码
+	Secret         string // 开发者密钥
+	Account        string // 默认要管理的微信号
+	CallbackLocal  string // 实际监听回调地址
+	CallbackPublic string // 映射到公网的回调地址
 }
 
 //
@@ -111,15 +118,19 @@ func NewWkTeam(s *WkTeam) (ret *WkTeam) {
 func init() {
 	// 默认设置
 	Settings = &Config{
-		ApiHost: "http://admin.wkgjhome.com",
+		ApiHost:        "http://admin.wkgjhome.com",
+		CallbackLocal:  "http://127.0.0.1:8080/v1/wkteam/",
+		CallbackPublic: "https://yourhost/api/wkteam/",
 	}
 	// 配置注释
 	_ = Settings.SetComments(map[string]string{
-		"ApiHost":  "微控api入口",
-		"Phone":    "开发者手机号",
-		"Password": "开发者密码",
-		"Secret":   "开发者密钥",
-		"Account":  "默认要管理的微信号",
+		"ApiHost":        "微控api入口",
+		"Phone":          "开发者手机号",
+		"Password":       "开发者密码",
+		"Secret":         "开发者密钥",
+		"Account":        "默认要管理的微信号",
+		"CallbackLocal":  "实际监听回调地址",
+		"CallbackPublic": "映射到公网的回调地址",
 	})
 	// version
 	if len(GitCommit) > 0 {
