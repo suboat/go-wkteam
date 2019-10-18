@@ -176,6 +176,7 @@ func (api *WkTeam) SetCallback(urlPrefix string) (err error) {
 	var (
 		params = map[string]interface{}{
 			"callbackSend": urlPrefix + CallbackPrefix + CallbackNormal,   // 通用回调
+			"messagelog":   urlPrefix + CallbackPrefix + CallbackMsgUser,  // 单聊回调
 			"crowdlog":     urlPrefix + CallbackPrefix + CallbackMsgGroup, // 群聊回调
 		}
 	)
@@ -323,7 +324,6 @@ func (api *WkTeam) GetMsgUser(targetUid string, query *Query) (ret []*MsgUser, e
 
 	var (
 		data []*struct {
-			// 开发者信息
 			Account     string `json:"my_account"`            // 收到消息的微信号
 			ToUid       string `json:"to_account"`            // 好友唯一ID
 			ToName      string `json:"to_name"`               // 昵称

@@ -26,6 +26,10 @@ var (
 		log.Debugf(`[default] HookHookMsgGroup %s <- %s`, msg.Account, PubJSON(msg))
 		return nil
 	}
+	DefaultHookHookMsgUser = func(msg *MsgUser) error {
+		log.Debugf(`[default] HookHookMsgUser %s -> %s : %s`, msg.GetFromName(), msg.GetToName(), PubJSON(msg))
+		return nil
+	}
 )
 
 // Config 系统配置参数
@@ -52,6 +56,7 @@ type WkTeam struct {
 	ApiHost string         // 微控api入口
 	Log     contrib.Logger //
 	// hooks
+	HookMsgUser  func(group *MsgUser) error
 	HookMsgGroup func(group *MsgGroup) error
 	//
 	lock   sync.RWMutex //

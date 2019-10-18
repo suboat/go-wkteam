@@ -10,7 +10,6 @@ import (
 func Test_ListenAndServe(t *testing.T) {
 	testConfigRead()
 	as := require.New(t)
-	as.Nil(nil)
 	api := &WkTeam{}
 	as.Nil(api.ListenAndServe(Settings.CallbackLocal, Settings.CallbackPublic))
 }

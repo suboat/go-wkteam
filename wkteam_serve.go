@@ -14,6 +14,7 @@ import (
 var (
 	CallbackPrefix   = "/callback/" // 回调地址前缀
 	CallbackNormal   = "normal"     // 通用回调
+	CallbackMsgUser  = "messagelog" // 单聊回调
 	CallbackMsgGroup = "msggroup"   // 群聊回调
 )
 
@@ -84,15 +85,72 @@ func (api *WkTeam) handleCallback(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// debug
-	api.Log.Infof(`[serve-callback] %s <- %s`, category, PubJSON(msg))
+	api.Log.Debugf(`[serve-callback] %s <- %s`, category, PubJSON(msg))
 
 	//
 	switch category {
 	case CallbackNormal:
 		// 通用回调
 		break
+	case CallbackMsgUser:
+		// 单聊回调
+		var (
+			resp = &struct {
+				Account     string `json:"my_account"`       // 收到消息的微信号
+				Name        string `json:"my_name"`          // 收到消息的微信号
+				NameAlias   string `json:"my_account_alias"` // 登录微信ID（wxid_xxxxxx开头的）
+				ToUid       string `json:"to_account"`       // 好友唯一ID
+				ToName      string `json:"to_name"`          // 昵称
+				Type        int    `json:"type"`             // 类型：1自己发的、2好友发的
+				ContentType int    `json:"content_type"`     // 消息类型 消息类型：1文字、2图片、3表情、4语音、5视频、6文件、10系统消息
+				Content     string `json:"content"`          // 消息内容
+				CreateTime  int64  `json:"sendtime"`         // 发送时间
+			}{}
+		)
+		if err = json.Unmarshal([]byte(msg["data"]), resp); err != nil {
+			return
+		}
+		data := &MsgUser{
+			Account:  resp.Account,
+			Category: priContentTypeToStr(resp.ContentType),
+			Content:  resp.Content,
+			Time:     time.Unix(resp.CreateTime, 0),
+		}
+		if resp.Type == 1 {
+			// 自己发的
+			data.IsMe = true
+			data.FromUid = resp.Account
+			data.FromName = resp.Name
+			data.FromNameAlias = ""
+			data.ToUid = resp.ToUid
+			data.ToName = resp.ToName
+			data.ToNameAlias = ""
+		} else {
+			// 别人发给我的
+			data.IsMe = false
+			data.FromUid = resp.ToUid
+			data.FromName = resp.ToName
+			data.FromNameAlias = ""
+			data.ToUid = resp.Account
+			data.ToName = resp.Name
+			data.ToNameAlias = ""
+		}
+		// 回调
+		call := api.HookMsgUser
+		if call == nil {
+			call = DefaultHookHookMsgUser
+		}
+		if call != nil {
+			go func() {
+				defer PanicRecoverError(api.Log, nil)
+				if _err := call(data); _err != nil {
+					api.Log.Errorf(`[serve-hook] HookMsgUser err: %v <- %s`, _err, PubJSON(data))
+				}
+			}()
+		}
+		break
 	case CallbackMsgGroup:
-		// 群聊回调: 解析为群消息
+		// 群聊回调
 		var (
 			resp = &struct {
 				Account   string `json:"my_account"`
