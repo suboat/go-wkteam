@@ -3,6 +3,7 @@ package wkteam
 import (
 	"github.com/stretchr/testify/require"
 	"github.com/suboat/go-contrib"
+	"time"
 
 	"fmt"
 	"testing"
@@ -71,6 +72,24 @@ func Test_GetMsgGroup(t *testing.T) {
 		}
 	}
 	api.Log.Infof("获取到群消息 %d/%d", len(d), query.Total)
+}
+
+// 取某个时间点后的所有群聊消息
+func Test_GetMsgGroupSince(t *testing.T) {
+	testConfigRead()
+	as := require.New(t)
+	api := NewWkTeam(nil)
+	since := time.Now().Add(-time.Hour * 4)
+	d, err := api.GetMsgGroupSince(testGroupID, since)
+	as.Nil(err)
+	// 调试信息
+	for _i, _d := range d {
+		api.Log.Infof("#%d %s -> %s(%s): %s", _i+1, _d.Time, _d.Uid, _d.GetName(), _d.Content)
+		if _i == len(d)-1 {
+			api.Log.Info(PubJSON(_d))
+		}
+	}
+	api.Log.Infof("获取到群消息 %s %d", since, len(d))
 }
 
 // 取好友单聊消息

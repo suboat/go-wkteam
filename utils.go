@@ -1,16 +1,18 @@
 package wkteam
 
 import (
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/suboat/go-contrib"
 	"github.com/suboat/go-contrib/log"
-	"runtime"
-	"strings"
 
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"runtime"
+	"strings"
 )
+
+// 定义一些工具方法
 
 //
 func PubJSON(v_ interface{}) (r string) {

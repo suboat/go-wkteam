@@ -272,6 +272,11 @@ func (api *WkTeam) GetMsgGroup(gid string, query *Query) (ret []*MsgGroup, err e
 		}
 	)
 	if _, err = api.Do("/foreign/group/getGroup", query, &data); err != nil {
+		//if strings.Contains(err.Error(), "暂无聊天记录") {
+		//	err = nil // 忽略错误
+		//} else {
+		//	return
+		//}
 		return
 	} else {
 		// 倒序结果
